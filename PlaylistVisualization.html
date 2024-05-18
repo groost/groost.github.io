@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Music Recommendation Website</title>
+        <meta charset="utf-8">
+
+        <link rel="stylesheet" href="style.css">
+    </head>
+    
+    <body>
+        <nav class="main-navigation">
+            <ul class="menu">            
+                <li class="menu-item"><a href="index.html">Home</a></li>
+                <li class="menu-item"><a href="DataVisualization.html">Search Data</a></li>
+                <li class="menu-item"><a class="active" href="PlaylistVisualization.html">Search Playlists</a></li>
+                <li class="menu-item"><a href="Search.html">Search for Songs</a></li>
+                <li class="menu-item"><a href="GetIDs.html">Search for Songs</a></li>
+                
+            </ul>
+
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.js"></script>
+
+            <div class="container">
+                <label>Please Input Spotify id: </label>
+                <input id="idInput">
+
+                <br>
+                <label>Select what type of result you want and search!</label>
+                <br>
+
+                <label><input type="checkbox" name="typeSelect" value="acousticness"> Acousticness</label>
+                <label><input type="checkbox" name="typeSelect" value="danceability"> Danceability</label>
+                <label><input type="checkbox" name="typeSelect" value="energy"> Energy</label>
+                <label><input type="checkbox" name="typeSelect" value="instrumentalness"> Instrumentalness</label>
+                <br>
+                <label><input type="checkbox" name="typeSelect" value="liveness"> Liveness</label>
+                <label><input type="checkbox" name="typeSelect" value="loudness"> Loudness</label>
+                <label><input type="checkbox" name="typeSelect" value="speechiness"> Speechiness</label>
+                <label><input type="checkbox" name="typeSelect" value="tempo"> Tempo</label>
+
+                <br>
+
+                <button type="submit" id="playlistButton">Submit</button>
+
+                <br>
+
+                <table id="songTable">
+                    <tr>
+                        <th>Song Name</th>
+                        <th>Artist Name</th>
+                        <th>Album Art/Spotify Link</th>
+                    </tr>
+                </table>
+
+                <br>
+                
+                <canvas id="lineChart" style="width:100%;max-width:700px"></canvas>
+                <br>
+
+                <canvas id="keyPieChart" style="width:50%;max-width:350px"></canvas>
+                <canvas id="modePieChart" style="width:50%;max-width:350px"></canvas>
+                
+                <!-- <br> -->
+
+                
+                
+                <script type="module">
+                    import { getPlaylist } from './JS/PlaylistCalls.js';
+                    import { getSongDetails } from './JS/SongCalls.js';
+                    import { getGraphValues, getPieChartKeys, getPieChartModes } from './JS/ParseCalls.js';
+
+                    document.querySelector("#playlistButton").addEventListener('click', () => {
+                        const selectedOptions = [];
+                        document.querySelectorAll('input[name="typeSelect"]:checked').forEach((checkbox) => {
+                            selectedOptions.push(checkbox.value);
+                        });
+                        console.log(selectedOptions); // Array of selected options' values
+                        // Proceed with your function, passing in selectedOptions
+                        searchPlaylist(selectedOptions);
+                    });
+                    
+                    var lineChart = null;
+                    var keyBarChart = null;
+                    var modePieChart = null;
+                    
+                    async function searchPlaylist(selectedOptions) {
+                        var id = document.getElementById("idInput").value;
+                        var data = await getPlaylist(id);
+                        
+                        var resultData = createResultData();
+                        for(var option of selectedOptions) {
+                            resultData = addCounts(data, option, resultData);
+                        }
+
+                        
+                        createChart(resultData, selectedOptions);
+                        createBarChart(getPieChartKeys(data), 'keyPieChart');
+                        createPieChart(getPieChartModes(data), 'modePieChart');
+                    }
+
+                    function createResultData() {
+                        var resultData = {};
+                        for(var i = 0; i <= 1; i += 0.05) {
+                            i = Math.round(i * 100) / 100;
+                            resultData[i] = {
+                                counts: [],
+                                trackNames: [],
+                                artistNames: [],
+                                imageurls: []
+                            };
+                        }
+
+                        return resultData;
+                    }
+
+                    function addCounts(data, typeToSearch, resultData) {
+                        var graphValues = getGraphValues(data, typeToSearch);
+                        // console.log(graphValues);
+
+                        var multiples = [];
+                        var counts = [];
+                        var names = {};
+
+                        Object.keys(graphValues).sort((a, b) => parseFloat(a) - parseFloat(b)).forEach(key => {
+                            multiples.push(parseFloat(key)); // Ensure the key is converted back to float for graphing
+                            counts.push(graphValues[key].count);
+                            names[parseFloat(key)] = [graphValues[key].trackNames, graphValues[key].artistNames, graphValues[key].imageurls];
+                        });
+
+                        console.log(names);
+                        // console.log(resultData);
+
+                        for(var i = 0; i < multiples.length; i++) {
+                            // console.log(multiples[i]);
+                            resultData[multiples[i]].counts.push(counts[i]);
+                            resultData[multiples[i]].trackNames.push(names[multiples[i]][0]);
+                            resultData[multiples[i]].artistNames.push(names[multiples[i]][1]);
+                            resultData[multiples[i]].imageurls.push(names[multiples[i]][2]);
+                        }
+
+                        return resultData;
+                    }
+
+                    function getRandomColor() {
+                        const r = Math.floor(Math.random() * 255);
+                        const g = Math.floor(Math.random() * 255);
+                        const b = Math.floor(Math.random() * 255);
+                        return `rgb(${r}, ${g}, ${b})`;
+                    }
+
+                    function createChart(resultData, typesToSearch) {
+                        // console.log(resultData);
+                        const labels = Object.keys(resultData).map(key => parseFloat(key)).sort();
+                        const datasets = [];
+
+                        for(var i = 0; i < typesToSearch.length; i++) {
+                            const dataPoints = labels.map(label => resultData[label].counts[i] || 0); // Use 0 as a fallback
+                            const color = getRandomColor();
+                            datasets.push({
+                                label: typesToSearch[i], // You might want to give these better names
+                                backgroundColor: color.replace('rgb', 'rgba').replace(')', ', 0.1)'), // Vary this per dataset
+                                borderColor: color, // Vary this per dataset
+                                data: dataPoints,
+                                fill: false,
+                            });
+                        }
+
+                        // Setup the canvas
+                        const container = document.querySelector('.container');
+                        let canvas = document.getElementById('lineChart');
+                        if (!canvas) {
+                            canvas = document.createElement('canvas');
+                            canvas.id = 'lineChart';
+                            canvas.style = "width:100%;max-width:700px";
+                            container.appendChild(canvas);
+                        } else {
+                            canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas if it already exists
+                        }
+
+                        // Initialize the chart on the new canvas
+                        const ctx = canvas.getContext('2d');
+                        lineChart = new Chart(ctx, {
+                            type: "line",
+                            data: {
+                                labels: labels,
+                                datasets: datasets
+                            },
+                            options: {}
+                        });
+
+                        canvas.onclick = (evt) => {
+                            const res = lineChart.getElementAtEvent(evt);
+                            console.log(res);
+                            if (res.length === 0) {
+                                return;
+                            }
+                            
+                            const index = res[0]._index;
+                            const dataset_index = res[0]._datasetIndex;
+                            populateTable(resultData[labels[index]].trackNames[dataset_index], resultData[labels[index]].artistNames[dataset_index], resultData[labels[index]].imageurls[dataset_index])
+                            // console.log(resultData[labels[index]].trackNames[dataset_index]);
+                            // console.log(resultData[labels[index]].artistNames[dataset_index]);
+                            // console.log(resultData[labels[index]].imageurls);
+                            
+                        };
+      
+                    }
+
+                    function createBarChart(data, chartName) {
+                        const container = document.querySelector('.container');
+                        let canvas = document.getElementById(chartName);
+                        if (!canvas) {
+                            canvas = document.createElement('canvas');
+                            canvas.id = chartName;
+                            canvas.style = "width:50%;max-width:350px";
+                            container.appendChild(canvas);
+                        }
+                        
+                        // Destroy existing chart instance if it exists
+
+                        // Initialize the chart on the new canvas
+                        const ctx = canvas.getContext('2d');
+                        const colors = data.labels.map(() => getRandomColor()); // Generating a random color for each segment
+                        keyBarChart = new Chart(ctx, {
+                            type: "bar",
+                            data: {
+                                labels: data.labels,
+                                datasets: [{
+                                    backgroundColor: colors,
+                                    borderColor: 'white',
+                                    data: data.data
+                                }]
+                            },
+                            options: {}
+                        });
+
+                        canvas.onclick = (evt) => {
+                            const points = keyBarChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
+
+                            if(points[0]) {
+                                var index = points[0]._index;
+                                populateTable(data.trackNames[data.labels[index]], data.artistNames[data.labels[index]], data.imageurls[data.labels[index]]);
+                            }
+                        };
+                    }
+
+                    function createPieChart(data, chartName) {
+                        const container = document.querySelector('.container');
+                        let canvas = document.getElementById(chartName);
+                        if (!canvas) {
+                            canvas = document.createElement('canvas');
+                            canvas.id = chartName;
+                            canvas.style = "width:50%;max-width:350px";
+                            container.appendChild(canvas);
+                        }
+                        
+                        // Destroy existing chart instance if it exists
+
+                        // Initialize the chart on the new canvas
+                        const ctx = canvas.getContext('2d');
+                        const colors = data.labels.map(() => getRandomColor()); // Generating a random color for each segment
+                        modePieChart = new Chart(ctx, {
+                            type: "pie",
+                            data: {
+                                labels: data.labels,
+                                datasets: [{
+                                    backgroundColor: colors,
+                                    borderColor: 'white',
+                                    data: data.data
+                                }]
+                            },
+                            options: {}
+                        });
+
+                        canvas.onclick = (evt) => {
+                            const points = modePieChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
+
+                            if(points[0]) {
+                                var index = points[0]._index;
+                                // if(chartName === 'keyPieChart') {
+                                populateTable(data.trackNames[data.labels[index]], data.artistNames[data.labels[index]], data.imageurls[data.labels[index]]);
+                                // }
+                            }
+                        };
+                    }
+
+
+                    function populateTable(songNames, artistNames, imageurls) {
+                        var table = document.querySelector("#songTable tbody");
+                        table.innerHTML = "<tr><th>Song Name</th><th>Artist Name</th><th>Album Art/Spotify Link</th></tr>";
+
+                        for(var i = 0; i < songNames.length; i++) {
+                            var row = document.createElement("tr");
+
+                            var songBox = document.createElement("td");
+                            var artistName = document.createElement("td");
+                            var imageBox = document.createElement("td");
+
+                            songBox.innerHTML = songNames[i];
+                            artistName.innerHTML = artistNames[i];
+
+                            var image = document.createElement('img');
+                            image.src = imageurls[i];
+                            imageBox.appendChild(image);
+
+                            row.appendChild(songBox);
+                            row.appendChild(artistName);
+                            row.appendChild(imageBox);
+
+                            // name.innerHTML = graphValues[label].names[i];
+
+                            table.appendChild(row);
+                        }
+                    }
+                </script>
+            </div>
+        </nav>
+    </body>
+</html>

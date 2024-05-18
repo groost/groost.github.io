@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Music Recommendation Website</title>
+        <meta charset="utf-8">
+
+        <link rel="stylesheet" href="style.css">
+        <style>
+            #mySlider {
+                width: 80%;
+                margin: 10px;
+            }
+            #sliderValue {
+                font-weight: bold;
+                color: blue;
+                margin-left: 10px;
+            }
+        </style>
+    </head>
+    
+
+    <body>
+        <nav class="main-navigation">
+            <ul class="menu">            
+                <li class="menu-item"><a href="index.html">Home</a></li>
+                <li class="menu-item"><a href="DataVisualization.html">Search Data</a></li>
+                <li class="menu-item"><a href="PlaylistVisualization.html">Search Playlists</a></li>
+                <li class="menu-item"><a class="active" href="Search.html">Search for Songs</a></li>
+                <li class="menu-item"><a href="GetIDs.html">Search for Songs</a></li>
+                
+            </ul>
+        </nav>
+
+        <div class="container">
+            <table id="searchReqTable">
+                <thead>
+                    <th>Input Term</th>
+                    <th>Type of Input</th>
+                    <th>Remove Term</th>
+                </thead>
+                <tbody>
+
+                </tbody>
+            </table>
+
+            <table id="searchTable">
+                <thead>
+                    <th>Input Term</th>
+                    <th>Type of Input</th>
+                    <th>Remove Term</th>
+                </thead>
+                <tbody>
+
+                </tbody>
+            </table>
+            
+            <button type="submit" id="addSearchButton">Add Search Term</button>
+            <button type="submit" id="addReqSearchButton">Add Required Search Term</button>
+            
+            <br>
+
+            <button type="submit" id="searchButton">Search</button>
+            
+            <br>
+            
+            <table id="songTable">
+                <tr>
+                    <th>Song Name</th>
+                    <th>Artist Name</th>
+                    <th>Album Art/Spotify Link</th>
+                </tr>
+            </table>
+
+            <script type="module">
+                import { searchRecommendations } from "./JS/SearchCalls.js";
+
+                var cnt1 = 0;
+
+                document.querySelector("#addSearchButton").addEventListener('click', () => {
+                    addSearchTerm();
+                });
+                
+                document.querySelector("#addReqSearchButton").addEventListener('click', () => {
+                    addReqSearchTerm();
+                });
+
+                document.querySelector("#searchButton").addEventListener('click', collectAllInputs);
+
+                function collectAllInputs() {
+                    var reqResults = [];
+
+                    var reqRows = document.querySelectorAll("#searchReqTable tbody tr"); // Get all rows in the table body
+
+                    reqRows.forEach(row => {
+                        var slider = row.querySelector(".searchInput");
+                        var typeSelect = row.querySelector(".searchType");
+                        
+                        var result = {
+                            rating: slider.value, // Get the value of the slider
+                            type: typeSelect.value // Get the selected option from the dropdown
+                        };
+
+                        reqResults.push(result);
+                    });
+
+                    var otherData = [];
+                    var reqRows = document.querySelectorAll("#searchTable tbody tr"); // Get all rows in the table body
+
+                    reqRows.forEach(row => {
+                        var slider = row.querySelector(".searchInput");
+                        var typeSelect = row.querySelector(".searchType");
+                        
+                        var result = {
+                            rating: slider.value, // Get the value of the slider
+                            type: typeSelect.value // Get the selected option from the dropdown
+                        };
+
+                        otherData.push(result);
+                    });
+
+                    console.log(reqResults);
+                    populateTable(reqResults, otherData); // For demonstration, we're logging the results
+                    // Here you can also send the data to a server or use it for other purposes
+                }
+
+                function removeSearchTerm(row) {
+                    row.remove();
+                }
+
+                async function addReqSearchTerm() {
+                    var table = document.querySelector("#searchReqTable tbody");
+
+                    var row = document.createElement("tr");
+                    var inputCell = document.createElement("td");
+                    var typeCell = document.createElement("td");
+                    var removeCell = document.createElement("td");
+                    
+                    var inputBox = document.createElement("input");
+                    inputBox.type = "text";
+                    inputBox.className = "searchInput";
+
+                    var typeBox = document.createElement("select");
+                    typeBox.className = "searchType";
+                    
+                    const values = ['seed_tracks', 'seed_genres', 'seed_artists'];
+                    const text = values;
+
+                    for(var i = 0; i < values.length; i++) {
+                        var option = document.createElement("option");
+                        option.value = values[i];
+                        option.text = text[i];
+                        typeBox.appendChild(option);
+                    }
+
+                    // var option3 = document.createElement("option");
+                    // var option4 = document.createElement("option");
+
+                    var removeButton = document.createElement("button");
+                    removeButton.id = "removeSearchTermButton" + cnt1;
+                    removeButton.type = "submit";
+                    removeButton.textContent = "Remove";
+                    removeButton.addEventListener('click', function() {
+                        removeSearchTerm(row);
+                    });
+                    //TODO remove function
+
+                    inputCell.appendChild(inputBox);
+                    typeCell.appendChild(typeBox);
+                    removeCell.appendChild(removeButton);
+                    row.appendChild(inputCell);
+                    row.appendChild(typeCell);
+                    row.appendChild(removeCell);
+                    
+                    table.appendChild(row);
+                }
+                
+                async function addSearchTerm() {
+                    var table = document.querySelector("#searchTable tbody");
+
+                    var row = document.createElement("tr");
+                    var inputCell = document.createElement("td");
+                    var typeCell = document.createElement("td");
+                    var removeCell = document.createElement("td");
+                    
+                    var labelBox = document.createElement("label");
+                    
+                    var inputBox = document.createElement("input");
+                    inputBox.type = "range";
+                    inputBox.min = 0;
+                    inputBox.max = 1.0;
+                    inputBox.value = 0.5;
+                    inputBox.step = 0.05;
+                    inputBox.className = "searchInput";
+
+                    // Initialize the label with the current value of the slider
+                    labelBox.textContent = 'Rating: ' + inputBox.value;
+
+                    // Update label text on slider input
+                    inputBox.oninput = function() {
+                        labelBox.textContent = 'Rating: ' + this.value;
+                    };
+                    
+                    var typeBox = document.createElement("select");
+                    typeBox.className = "searchType";
+                    
+                    const values = ['acousticness', 'danceability', 'energy', 'instrumentalness', 'liveness', 'speechiness'];
+                    const text = values;
+
+                    for(var i = 0; i < values.length; i++) {
+                        var option = document.createElement("option");
+                        option.value = values[i];
+                        option.text = text[i];
+                        typeBox.appendChild(option);
+                    }
+                    
+                    // var option3 = document.createElement("option");
+                    // var option4 = document.createElement("option");
+
+                    var removeButton = document.createElement("button");
+                    removeButton.id = "removeSearchTermButton" + cnt1;
+                    removeButton.type = "submit";
+                    removeButton.textContent = "Remove";
+                    removeButton.addEventListener('click', function() {
+                        removeSearchTerm(row);
+                    });
+
+                    inputCell.appendChild(inputBox);
+                    inputCell.appendChild(document.createElement("br"));
+                    inputCell.appendChild(labelBox);
+                    typeCell.appendChild(typeBox);
+                    removeCell.appendChild(removeButton);
+                    row.appendChild(inputCell);
+                    row.appendChild(typeCell);
+                    row.appendChild(removeCell);
+                    
+                    table.appendChild(row);
+
+                    cnt1++;
+                }
+
+                async function populateTable(reqData, otherData) {
+                    var data = await searchRecommendations(reqData, otherData);
+                    var table = document.querySelector("#songTable tbody");
+                    table.innerHTML = "<tr><th>Song Name</th><th>Artist Name</th><th>Album Art/Spotify Link</th></tr>";
+
+                    data = data['tracks'];
+                    for(var i = 0; i < data.length; i++) {
+                        var row = document.createElement("tr");
+
+                        var songBox = document.createElement("td");
+                        var artistName = document.createElement("td");
+                        var imageBox = document.createElement("td");
+
+                        songBox.innerHTML = data[i]['name'];
+                        artistName.innerHTML = data[i]['artists'][0]['name'];
+
+                        var image = document.createElement('img');
+                        image.src = data[i]['album']['images'][0]['url'];
+                        imageBox.appendChild(image);
+
+                        row.appendChild(songBox);
+                        row.appendChild(artistName);
+                        row.appendChild(imageBox);
+
+                        // name.innerHTML = graphValues[label].names[i];
+
+                        table.appendChild(row);
+                    }
+                }
+
+
+
+                function createResultData() {
+                    var resultData = {};
+                    for(var i = 0; i <= 1; i += 0.05) {
+                        i = Math.round(i * 100) / 100;
+                        resultData[i] = {
+                            counts: [],
+                            trackNames: [],
+                            artistNames: [],
+                            imageurls: []
+                        };
+                    }
+
+                    return resultData;
+                }
+
+                function addCounts(data, typeToSearch, resultData) {
+                    var graphValues = getGraphValues(data, typeToSearch);
+                    // console.log(graphValues);
+
+                    var multiples = [];
+                    var counts = [];
+                    var names = {};
+
+                    Object.keys(graphValues).sort((a, b) => parseFloat(a) - parseFloat(b)).forEach(key => {
+                        multiples.push(parseFloat(key)); // Ensure the key is converted back to float for graphing
+                        counts.push(graphValues[key].count);
+                        names[parseFloat(key)] = [graphValues[key].trackNames, graphValues[key].artistNames, graphValues[key].imageurls];
+                    });
+
+                    // console.log(names);
+                    // console.log(resultData);
+
+                    for(var i = 0; i < multiples.length; i++) {
+                        // console.log(multiples[i]);
+                        resultData[multiples[i]].counts.push(counts[i]);
+                        resultData[multiples[i]].trackNames.push(names[multiples[i]][0]);
+                        resultData[multiples[i]].artistNames.push(names[multiples[i]][1]);
+                        resultData[multiples[i]].imageurls.push(names[multiples[i]][2]);
+                    }
+
+                    return resultData;
+                }
+            </script>
+    </body>
+</html>

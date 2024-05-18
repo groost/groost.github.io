@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Music Recommendation Website</title>
+        <meta charset="utf-8">
+
+        <link rel="stylesheet" href="style.css">
+        
+    </head>
+    
+    <body>
+        <nav class="main-navigation">
+            <ul class="menu">            
+                <li class="menu-item"><a href="index.html">Home</a></li>
+                <li class="menu-item"><a class="active" href="DataVisualization.html">Search Data</a></li>
+                <li class="menu-item"><a href="PlaylistVisualization.html">Search Playlists</a></li>
+                <li class="menu-item"><a href="Search.html">Search for Songs</a></li>
+                <li class="menu-item"><a href="GetIDs.html">Get IDs</a></li>
+                
+            </ul>
+        </nav> 
+
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.js"></script>
+        <div class="container">
+            <label>First, add your search term (what info you have, e.g. chance the rapper). Then, search either artist, album, or song and rate!</label>
+            <table id="searchTable">
+                <tr>
+                    <th>Input Term</th>
+                    <th>Type of Input</th>
+                    <th>Remove Term</th>
+                </tr>
+            </table>
+            <button type="submit" id="addSearchButton">Add Search Term</button>
+            <br>
+            <label>Select what type of result you want and search!</label>
+            <br>
+
+            <label><input type="checkbox" name="typeSelect" value="acousticness">Acousticness</label>
+            <label><input type="checkbox" name="typeSelect" value="danceability">Danceability</label>
+            <label><input type="checkbox" name="typeSelect" value="energy">Energy</label>
+            <label><input type="checkbox" name="typeSelect" value="instrumentalness">Instrumentalness</label>
+            <br>
+            <label><input type="checkbox" name="typeSelect" value="liveness">Liveness</label>
+            <label><input type="checkbox" name="typeSelect" value="loudness">Loudness</label>
+            <label><input type="checkbox" name="typeSelect" value="speechiness">Speechiness</label>
+            <label><input type="checkbox" name="typeSelect" value="tempo">Tempo</label>
+            <label><input type="checkbox" name="typeSelect" value="popularity">Popularity</label>
+            <label><input type="checkbox" name="typeSelect" value="valence">Positivity</label>
+
+            <br>
+
+            <button type="submit" id="searchButton">Search</button>
+            <br>
+
+            <table id="songTable">
+                <tr>
+                    <th>Song Name</th>
+                    <th>Artist Name</th>
+                    <th>Album Art/Spotify Link</th>
+                </tr>
+            </table>
+
+            <br>
+            
+            <canvas id="lineChart" style="width:100%;max-width:700px"></canvas>
+            <canvas id="keyBarChart" style="width:100%;max-width:700px"></canvas>
+            <canvas id="modePieChart" style="width:100%;max-width:700px"></canvas>
+            
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/aws-sdk/2.1248.0/aws-sdk.min.js"></script>
+
+            <script type="module">
+                import { searchGeneral } from './JS/SearchCalls.js';
+                import { parseAlbums, parseSongs, getGraphValues, getPieChartKeys, getPieChartModes } from "./JS/ParseCalls.js";
+                import { getAlbumTracks } from './JS/AlbumCalls.js';
+
+                var cnt1 = 0;
+
+                document.querySelector("#addSearchButton").addEventListener('click', () => {
+                    addSearchTerm();
+                });
+
+                document.querySelector("#searchButton").addEventListener('click', () => {
+                    const selectedOptions = [];
+                    document.querySelectorAll('input[name="typeSelect"]:checked').forEach((checkbox) => {
+                        selectedOptions.push(checkbox.value);
+                    });
+                    searchTerms(selectedOptions);
+                });
+
+                function removeSearchTerm(row) {
+                    row.remove();
+                }
+
+                var lineChart = null;
+                var keyBarChart = null;
+                var modePieChart = null;
+
+                async function addSearchTerm() {
+                    var table = document.querySelector("#searchTable tbody");
+
+                    var row = document.createElement("tr");
+                    var inputCell = document.createElement("td");
+                    var typeCell = document.createElement("td");
+                    var removeCell = document.createElement("td");
+                    
+                    var inputBox = document.createElement("input");
+                    inputBox.type = "text";
+                    inputBox.className = "searchInput";
+
+                    var typeBox = document.createElement("select");
+                    typeBox.className = "searchType";
+                    
+                    var option1 = document.createElement("option");
+                    option1.value = "songName";
+                    option1.text = "track";
+                    
+                    var option2 = document.createElement("option");
+                    option2.value = "artistName";
+                    option2.text = "artist";
+                    
+                    var option3 = document.createElement("option");
+                    option3.value = "album";
+                    option3.text = "album";
+                    // var option3 = document.createElement("option");
+                    // var option4 = document.createElement("option");
+
+                    var removeButton = document.createElement("button");
+                    removeButton.id = "removeSearchTermButton" + cnt1;
+                    removeButton.type = "submit";
+                    removeButton.textContent = "Remove";
+                    removeButton.addEventListener('click', function() {
+                        removeSearchTerm(row);
+                    });
+                    //TODO remove function
+
+                    typeBox.appendChild(option1);
+                    typeBox.appendChild(option2);
+                    typeBox.appendChild(option3);
+
+                    inputCell.appendChild(inputBox);
+                    typeCell.appendChild(typeBox);
+                    removeCell.appendChild(removeButton);
+                    row.appendChild(inputCell);
+                    row.appendChild(typeCell);
+                    row.appendChild(removeCell);
+                    
+                    table.appendChild(row);
+
+                    cnt1++;
+                }
+
+                async function searchTerms(selectedOptions) {
+                    var table = document.querySelector("#searchTable tbody");
+                    var elms = table.getElementsByClassName("searchInput");
+                    var terms = [];
+                    for(var i = 0; i < elms.length; i++) {
+                        terms.push(elms[i].value);
+                    }
+                    
+                    elms = table.getElementsByClassName("searchType");
+                    var types = [];
+
+                    var check = false;
+                    var finalCheck = false;
+
+                    for(var i = 0; i < elms.length; i++) {
+                        if(elms[i].value === "artistName") {
+                            if(check) {
+                                finalCheck = true;
+                            }
+
+                            check = true;
+                        }
+                        
+                        types.push(elms[i].value);
+                    }
+                    
+                    var result = [];
+                    if(!finalCheck) {
+                        var dict = {};
+                        for(var i = 0; i < types.length; i++) {
+                            dict[types[i]] = terms[i];
+                        }
+                        
+                        console.log(dict);
+                        result = await searchGeneral(dict, ['album']);
+                        result = await parseAlbums(result['albums']['items']);
+                        result.sort((a, b) => a.releaseDate.localeCompare(b.releaseDate));
+                        await createCharts(result, selectedOptions, false);
+                    }
+                    else {
+                        var datasets = [];
+                        check = false;
+                        for(var i = 0; i < types.length; i++) {
+                            var dict = {};
+                            dict[types[i]] = terms[i];
+
+                            var result1 = await searchGeneral(dict, ['album']);
+                            result1 = await parseAlbums(result1['albums']['items']);
+                            result1.sort((a, b) => a.releaseDate.localeCompare(b.releaseDate));
+                            
+                            result.push(result1);
+
+                            if(!(types[i] === "artistName")) {
+                                check = true;
+                                break;
+                            }
+                        }
+
+                        if(!check) {
+                            createCharts(result, selectedOptions, true);
+                        }
+                    }    
+                        // console.log(result);
+                        
+                        // await createLineChart(result, selectedOptions);
+                }   
+                
+                async function createCharts(data, typesToSearch, multipleArtists) {
+                    if(!multipleArtists) {
+                        var songData = await parseSongs(data);
+                        console.log(songData);
+                        
+                        var resultData = createResultData();
+                        for(var type of typesToSearch) {
+                            resultData = addCounts(songData, type, resultData);
+                        }
+                        
+                        
+                        createLineChart(resultData, typesToSearch, null);
+                    }
+                    else {
+                        var datasets = [];
+                        var resultDatas = [];
+                        for(var i = 0; i < data.length; i++) {
+                            var songData = await parseSongs(data[i]);
+                            console.log(songData);
+                            
+                            var resultData = createResultData();
+                            for(var type of typesToSearch) {
+                                resultData = addCounts(songData, type, resultData);
+                            }
+
+                            resultDatas.push(resultData);
+                            console.log("resultData:");
+                            console.log(resultData);
+                            var subData = getDatasets(resultData, typesToSearch);
+                            for(var subsubData of subData) {
+                                datasets.push(subsubData);
+                            }
+                        }
+                        
+                        console.log("datasets:");
+                        console.log(datasets);
+                        createLineChart(resultDatas, typesToSearch, datasets);
+                    }
+                    // createBarChart(getPieChartKeys(songData), 'keyBarChart');
+                    // createPieChart(getPieChartModes(songData), 'modePieChart');
+                }
+                
+                function getDatasets(resultData, typesToSearch) {
+                    const labels = Object.keys(resultData).map(key => parseFloat(key)).sort();
+
+                    const datasets = [];
+
+                    for(var i = 0; i < typesToSearch.length; i++) {
+                        const dataPoints = labels.map(label => resultData[label].counts[i] || 0); // Use 0 as a fallback
+                        const color = getRandomColor();
+                        datasets.push({
+                            label: typesToSearch[i], // You might want to give these better names
+                            backgroundColor: color.replace('rgb', 'rgba').replace(')', ', 0.1)'), // Vary this per dataset
+                            borderColor: color, // Vary this per dataset
+                            data: dataPoints,
+                            fill: false,
+                        });
+                    }
+
+                    return datasets;
+                }
+
+                function createLineChart(resultData, typesToSearch, datasets) {
+                    // console.log(resultData);
+
+                    var labels = null;
+                    if(!(resultData instanceof Array)) {
+                        labels = Object.keys(resultData).map(key => parseFloat(key)).sort();
+                        datasets = getDatasets(resultData, typesToSearch);
+                    }
+                    else {
+                        labels = Object.keys(createResultData()).map(key => parseFloat(key)).sort();
+                    }
+
+                    // Setup the canvas
+                    const container = document.querySelector('.container');
+                    let canvas = document.getElementById('lineChart');
+                    if (!canvas) {
+                        canvas = document.createElement('canvas');
+                        canvas.id = 'lineChart';
+                        canvas.style = "width:100%;max-width:700px";
+                        container.appendChild(canvas);
+                    } else {
+                        canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas if it already exists
+                    }
+
+                    // Initialize the chart on the new canvas
+                    const ctx = canvas.getContext('2d');
+                    lineChart = new Chart(ctx, {
+                        type: "line",
+                        data: {
+                            labels: labels,
+                            datasets: datasets
+                        },
+                        options: {}
+                    });
+
+                    canvas.onclick = (evt) => {
+                        const res = lineChart.getElementAtEvent(evt);
+                        console.log(res);
+                        if (res.length === 0) {
+                            return;
+                        }
+                        
+                        const index = res[0]._index;
+                        const dataset_index = res[0]._datasetIndex;
+                        populateTable(resultData[labels[index]].trackNames[dataset_index], resultData[labels[index]].artistNames[dataset_index], resultData[labels[index]].imageurls[dataset_index])
+                        // console.log(resultData[labels[index]].trackNames[dataset_index]);
+                        // console.log(resultData[labels[index]].artistNames[dataset_index]);
+                        // console.log(resultData[labels[index]].imageurls);
+                        
+                    };
+
+                    return datasets;
+                }
+
+                function createBarChart(data, chartName) {
+                    const container = document.querySelector('.container');
+                    let canvas = document.getElementById(chartName);
+                    if (!canvas) {
+                        canvas = document.createElement('canvas');
+                        canvas.id = chartName;
+                        canvas.style = "width:50%;max-width:350px";
+                        container.appendChild(canvas);
+                    }
+                    
+                    // Destroy existing chart instance if it exists
+
+                    // Initialize the chart on the new canvas
+                    const ctx = canvas.getContext('2d');
+                    const colors = data.labels.map(() => getRandomColor()); // Generating a random color for each segment
+                    keyBarChart = new Chart(ctx, {
+                        type: "bar",
+                        data: {
+                            labels: data.labels,
+                            datasets: [{
+                                backgroundColor: colors,
+                                borderColor: 'white',
+                                data: data.data
+                            }]
+                        },
+                        options: {}
+                    });
+
+                    canvas.onclick = (evt) => {
+                        const points = keyBarChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
+
+                        if(points[0]) {
+                            var index = points[0]._index;
+                            populateTable(data.trackNames[data.labels[index]], data.artistNames[data.labels[index]], data.imageurls[data.labels[index]]);
+                        }
+                    };
+                }
+                
+                function createPieChart(data, chartName) {
+                    const container = document.querySelector('.container');
+                    let canvas = document.getElementById(chartName);
+                    if (!canvas) {
+                        canvas = document.createElement('canvas');
+                        canvas.id = chartName;
+                        canvas.style = "width:50%;max-width:350px";
+                        container.appendChild(canvas);
+                    }
+                    
+                    // Destroy existing chart instance if it exists
+
+                    // Initialize the chart on the new canvas
+                    const ctx = canvas.getContext('2d');
+                    const colors = data.labels.map(() => getRandomColor()); // Generating a random color for each segment
+                    modePieChart = new Chart(ctx, {
+                        type: "pie",
+                        data: {
+                            labels: data.labels,
+                            datasets: [{
+                                backgroundColor: colors,
+                                borderColor: 'white',
+                                data: data.data
+                            }]
+                        },
+                        options: {}
+                    });
+
+                    canvas.onclick = (evt) => {
+                        const points = modePieChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
+
+                        if(points[0]) {
+                            var index = points[0]._index;
+                            // if(chartName === 'keyPieChart') {
+                            populateTable(data.trackNames[data.labels[index]], data.artistNames[data.labels[index]], data.imageurls[data.labels[index]]);
+                            // }
+                        }
+                    };
+                }
+
+                function getRandomColor() {
+                    const r = Math.floor(Math.random() * 255);
+                    const g = Math.floor(Math.random() * 255);
+                    const b = Math.floor(Math.random() * 255);
+                    return `rgb(${r}, ${g}, ${b})`;
+                }
+
+                function createResultData() {
+                    var resultData = {};
+                    for(var i = 0; i <= 1; i += 0.05) {
+                        i = Math.round(i * 100) / 100;
+                        resultData[i] = {
+                            counts: [],
+                            trackNames: [],
+                            artistNames: [],
+                            imageurls: []
+                        };
+                    }
+
+                    return resultData;
+                }
+
+                function addCounts(data, typeToSearch, resultData) {
+                    var graphValues = getGraphValues(data, typeToSearch);
+                    // console.log(graphValues);
+
+                    var multiples = [];
+                    var counts = [];
+                    var names = {};
+
+                    Object.keys(graphValues).sort((a, b) => parseFloat(a) - parseFloat(b)).forEach(key => {
+                        multiples.push(parseFloat(key)); // Ensure the key is converted back to float for graphing
+                        counts.push(graphValues[key].count);
+                        names[parseFloat(key)] = [graphValues[key].trackNames, graphValues[key].artistNames, graphValues[key].imageurls];
+                    });
+
+                    // console.log(names);
+                    // console.log(resultData);
+                    console.log(multiples);
+
+                    for(var i = 0; i < multiples.length; i++) {
+                        // console.log(multiples[i]);
+                        resultData[multiples[i]].counts.push(counts[i]);
+                        resultData[multiples[i]].trackNames.push(names[multiples[i]][0]);
+                        resultData[multiples[i]].artistNames.push(names[multiples[i]][1]);
+                        resultData[multiples[i]].imageurls.push(names[multiples[i]][2]);
+                    }
+
+                    return resultData;
+                }
+
+                function populateTable(songNames, artistNames, imageurls) {
+                    var table = document.querySelector("#songTable tbody");
+                    table.innerHTML = "<tr><th>Song Name</th><th>Artist Name</th><th>Album Art/Spotify Link</th></tr>";
+
+                    for(var i = 0; i < songNames.length; i++) {
+                        var row = document.createElement("tr");
+
+                        var songBox = document.createElement("td");
+                        var artistName = document.createElement("td");
+                        var imageBox = document.createElement("td");
+
+                        songBox.innerHTML = songNames[i];
+                        artistName.innerHTML = artistNames[i];
+
+                        var image = document.createElement('img');
+                        image.src = imageurls[i];
+                        imageBox.appendChild(image);
+
+                        row.appendChild(songBox);
+                        row.appendChild(artistName);
+                        row.appendChild(imageBox);
+
+                        // name.innerHTML = graphValues[label].names[i];
+
+                        table.appendChild(row);
+                    }
+                }
+            </script>
+        </div>
+    </body>
+</html>

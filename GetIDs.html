@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Music Recommendation Website</title>
+        <meta charset="utf-8">
+
+        <link rel="stylesheet" href="style.css">
+        
+    </head>
+    
+    <body>
+        <nav class="main-navigation">
+            <ul class="menu">            
+                <li class="menu-item"><a href="index.html">Home</a></li>
+                <li class="menu-item"><a class="active" href="DataVisualization.html">Search Data</a></li>
+                <li class="menu-item"><a href="PlaylistVisualization.html">Search Playlists</a></li>
+                <li class="menu-item"><a href="Search.html">Search for Songs</a></li>
+                <li class="menu-item"><a href="GetIDs.html">Get IDs</a></li>
+                
+            </ul>
+        </nav> 
+
+        <div class="container">
+            <label>First, add your search term (what info you have, e.g. chance the rapper). Then, search either artist, album, or song and rate!</label>
+            <table id="searchTable">
+                <tr>
+                    <th>Input Term</th>
+                    <th>Type of Input</th>
+                    <th>Remove Term</th>
+                </tr>
+            </table>
+            <button type="submit" id="addSearchButton">Add Search Term</button>
+            <br>
+            <label>Select what type of result you want and search!</label>
+            <select id="searchType">
+                <option value="artist">Artist id</option>
+                <option value="track">Song id</option>
+            </select>
+
+            <br>
+            <button type="submit" id="searchButton">Search</button>
+            <br>
+
+            <label id="outputLabel"></label>
+
+            <script type="module">
+                import { getID } from "./JS/SearchCalls.js";
+                var cnt1 = 0;
+
+                document.querySelector("#addSearchButton").addEventListener('click', () => {
+                    addSearchTerm();
+                });
+
+                document.querySelector("#searchButton").addEventListener('click', () => {
+                    const option = document.getElementById("searchType").value;
+                    searchTerms(option);
+                });
+
+                function removeSearchTerm(row) {
+                    row.remove();
+                }
+                
+                async function addSearchTerm() {
+                    var table = document.querySelector("#searchTable tbody");
+
+                    var row = document.createElement("tr");
+                    var inputCell = document.createElement("td");
+                    var typeCell = document.createElement("td");
+                    var removeCell = document.createElement("td");
+                    
+                    var inputBox = document.createElement("input");
+                    inputBox.type = "text";
+                    inputBox.className = "searchInput";
+
+                    var typeBox = document.createElement("select");
+                    typeBox.className = "searchType";
+                    
+                    var option1 = document.createElement("option");
+                    option1.value = "songName";
+                    option1.text = "track";
+                    
+                    var option2 = document.createElement("option");
+                    option2.value = "artistName";
+                    option2.text = "artist";
+                    
+                    var option3 = document.createElement("option");
+                    option3.value = "album";
+                    option3.text = "album";
+                    // var option3 = document.createElement("option");
+                    // var option4 = document.createElement("option");
+
+                    var removeButton = document.createElement("button");
+                    removeButton.id = "removeSearchTermButton" + cnt1;
+                    removeButton.type = "submit";
+                    removeButton.textContent = "Remove";
+                    removeButton.addEventListener('click', function() {
+                        removeSearchTerm(row);
+                    });
+                    //TODO remove function
+
+                    typeBox.appendChild(option1);
+                    typeBox.appendChild(option2);
+                    typeBox.appendChild(option3);
+
+                    inputCell.appendChild(inputBox);
+                    typeCell.appendChild(typeBox);
+                    removeCell.appendChild(removeButton);
+                    row.appendChild(inputCell);
+                    row.appendChild(typeCell);
+                    row.appendChild(removeCell);
+                    
+                    table.appendChild(row);
+
+                    cnt1++;
+                }
+
+                async function searchTerms(selectedOptions) {
+                    var table = document.querySelector("#searchTable tbody");
+                    var elms = table.getElementsByClassName("searchInput");
+                    var terms = [];
+                    for(var i = 0; i < elms.length; i++) {
+                        terms.push(elms[i].value);
+                    }
+
+                    elms = table.getElementsByClassName("searchType");
+                    var types = [];
+                    for(var i = 0; i < elms.length; i++) {
+                        types.push(elms[i].value);
+                    }
+                    
+                    var dict = {};
+                    for(var i = 0; i < types.length; i++) {
+                        dict[types[i]] = terms[i];
+                    }
+
+                    document.getElementById("outputLabel").innerHTML = await getID(dict, selectedOptions);
+                }
+            </script>
+        </div>
+    </body>
+</html>

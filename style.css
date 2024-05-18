@@ -1,0 +1,130 @@
+ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: #0E0A33;
+}
+
+li a {
+    display: block;
+    color: #B1AFCA;
+    font-size: 30px;
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
+  }
+
+img {
+    width: 200px;
+    height: 200px;
+}
+
+body {
+    background-color: #0E0A33;
+    display: flex;
+    flex-direction: column;
+
+}
+
+.container {
+    background-color: #0E0A33;
+    color: #B1AFCA;
+    padding: 20px;
+}
+
+ul, table, th, tr {
+    border: 1px #0E0A33;
+    text-align: center;
+    color: #B1AFCA;
+    font-size: 30px;
+    margin-left: auto;
+    margin-right: auto;
+    width: auto;
+}
+
+button {
+    background-color: #0E0A33;
+    border-radius: 10px;
+    color: #B1AFCA;
+    font-size: 30px;
+    /* text-shadow: 1px 1px lightblue; */
+}
+
+fieldset {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+label, legend, input {
+    color: #B1AFCA;
+    font-size: 30px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Customize the appearance of the audio player controls */
+#audioPlayer::-webkit-media-controls-panel {
+    background-color: transparent;
+    color: #1DB954; /* Spotify green */
+}
+
+/* Customize the appearance of the progress bar */
+#audioPlayer::-webkit-media-slider-thumb {
+    background-color: #1DB954; /* Spotify green */
+}
+
+input {
+    background-color: #0E0A33;
+    border: 2px solid #443E75;
+    padding: 5px;
+}
+
+.rating-input {
+    width: 30px;
+}
+
+.rating-button {
+    width: 40px;
+    text-align: center;
+}
+
+.rating-icon {
+    width: 30px;
+    height: 30px;
+    align-self: center;
+}
+
+/* Style the navigation bar as a tab menu */
+.main-navigation {
+    background-color: #3C593F; /* Background color of the tab menu */
+    color: #B1AFCA; /* Text color */
+    justify-content: space-between;
+}
+
+.sidebar {
+    width: 250px;
+    background: #3C593F;
+    color: #B1AFCA;
+    padding: 20px;
+}
+.menu {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    display: flex; /* Display the menu items horizontally */
+}
+
+.menu-item {
+    margin-right: 20px; /* Adjust spacing between menu items */
+}
+
+.menu-item a {
+    text-decoration: none;
+    color: #B1AFCA; /* Text color for menu links */
+    padding: 10px; /* Adjust padding for better appearance */
+}
+
+.menu-item a.active {
+    background-color: #0E0A33; /* Background color for the active tab */
+}
