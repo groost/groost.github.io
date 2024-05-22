@@ -32,22 +32,30 @@
         </nav>
 
         <div class="container">
+            <button type="submit" id="addReqSearchButton">Add Required Search Term</button>
+            <br>
+
             <table id="searchReqTable">
                 <thead>
-                    <th>Input Term</th>
-                    <th>Type of Input</th>
-                    <th>Remove Term</th>
+                    
                 </thead>
                 <tbody>
 
                 </tbody>
             </table>
 
+            <table id="requiredReturnTable">
+                <tr>
+                    <th>
+                        IDs
+                    </th>
+                </tr>
+            </table>
+
+            <br>
+
             <table id="searchTable">
                 <thead>
-                    <th>Input Term</th>
-                    <th>Type of Input</th>
-                    <th>Remove Term</th>
                 </thead>
                 <tbody>
 
@@ -55,7 +63,6 @@
             </table>
             
             <button type="submit" id="addSearchButton">Add Search Term</button>
-            <button type="submit" id="addReqSearchButton">Add Required Search Term</button>
             
             <br>
 
@@ -72,7 +79,7 @@
             </table>
 
             <script type="module">
-                import { searchRecommendations } from "./JS/SearchCalls.js";
+                import { searchRecommendations, getID } from "./JS/SearchCalls.js";
 
                 var cnt1 = 0;
 
@@ -89,7 +96,7 @@
                 function collectAllInputs() {
                     var reqResults = [];
 
-                    var reqRows = document.querySelectorAll("#searchReqTable tbody tr"); // Get all rows in the table body
+                    var reqRows = document.querySelectorAll("#requiredReturnTable tbody tr"); // Get all rows in the table body
 
                     reqRows.forEach(row => {
                         var slider = row.querySelector(".searchInput");
@@ -129,21 +136,19 @@
 
                 async function addReqSearchTerm() {
                     var table = document.querySelector("#searchReqTable tbody");
+                    table.innerHTML = "<tr><th>Input Term</th><th>Submit Input</th></tr>";
 
                     var row = document.createElement("tr");
                     var inputCell = document.createElement("td");
                     var typeCell = document.createElement("td");
                     var removeCell = document.createElement("td");
                     
-                    var inputBox = document.createElement("input");
-                    inputBox.type = "text";
-                    inputBox.className = "searchInput";
 
                     var typeBox = document.createElement("select");
-                    typeBox.className = "searchType";
+                    typeBox.id = "searchType";
                     
                     const values = ['seed_tracks', 'seed_genres', 'seed_artists'];
-                    const text = values;
+                    const text = ['tracks', 'genres', 'artists'];
 
                     for(var i = 0; i < values.length; i++) {
                         var option = document.createElement("option");
@@ -158,24 +163,114 @@
                     var removeButton = document.createElement("button");
                     removeButton.id = "removeSearchTermButton" + cnt1;
                     removeButton.type = "submit";
-                    removeButton.textContent = "Remove";
+                    removeButton.textContent = "Get Search Boxes";
                     removeButton.addEventListener('click', function() {
+                        const value = document.getElementById('searchType').value;
                         removeSearchTerm(row);
+                        addSearchBoxes(value);
                     });
-                    //TODO remove function
+                    // TODO remove function
 
-                    inputCell.appendChild(inputBox);
+                    // inputCell.appendChild(inputBox);
                     typeCell.appendChild(typeBox);
                     removeCell.appendChild(removeButton);
-                    row.appendChild(inputCell);
+                    // row.appendChild(inputCell);
                     row.appendChild(typeCell);
                     row.appendChild(removeCell);
                     
                     table.appendChild(row);
                 }
+
+                async function addSearchBoxes(value) {
+                    var table = document.querySelector("#searchReqTable tbody");
+                    var check = false;
+                    console.log(value);
+                    if(value === 'seed_tracks') {
+                        table.innerHTML = "<tr><th>Song Name</th><th>Artist Name</th><th>Search</th></tr>";
+                        check = true;
+                    }
+                    else if(value === "seed_genres") {
+                        table.innerHTML = "<tr><th>Genre Name</th><th>Submit Genres</th></tr>";
+                    }
+                        
+                    var row = document.createElement("tr");
+                    var inputCell = document.createElement("td");
+                    var submitCell = document.createElement("td");
+
+                    var inputBox = document.createElement("input");
+                    inputBox.type = "text";
+                    inputBox.className = "searchInput";
+                    inputBox.id = "searchInput";
+                        
+                    var submitBox = document.createElement("button");
+                    submitBox.id = "removeSearchTermButton" + cnt1;
+                    submitBox.type = "submit";
+                    submitBox.textContent = "Get Search Boxes";
+                    submitBox.addEventListener('click', function() {
+                        search(value);
+                        removeSearchTerm(row);
+
+                    });
+
+                    inputCell.appendChild(inputBox);
+                    submitCell.appendChild(submitBox);
+
+                    
+                    if(value === 'seed_tracks') {
+                        var songCell = document.createElement("td");
+                        
+                        var songBox = document.createElement("input");
+                        songBox.type = "text";
+                        songBox.className = "songInput";
+                        songBox.id = "songInput";
+
+                        songCell.appendChild(songBox);
+                        
+                        row.appendChild(songCell);
+                    }
+                    
+                    row.appendChild(inputCell);
+                    row.appendChild(submitCell);
+                    
+                    table.appendChild(row);
+                }
+
+                async function search(value) {
+                    var table = document.querySelector("#requiredReturnTable tbody");
+
+                    var row = document.createElement("tr");
+                    var labelCell = document.createElement("td");
+                    
+                    var id;
+
+                    if(value === 'seed_tracks') {
+                        var songName = document.getElementById('songInput').value;
+                        var artistName = document.getElementById('searchInput').value;
+
+                        var dict = {'songName': songName, 'artistName': artistName};
+                        id = await getID(dict, 'track');
+
+                        var labelCheck = table.getElementsByClassName("songIDs");
+                        if (labelCheck.length == 1) {
+                            labelCheck[0].innerText = labelCheck[0].innerText + "," + id;
+                            return;
+                        }
+                        else {
+                            var label = document.createElement("label");
+                            label.className = "songIDs";
+                            label.innerText = id;
+                            labelCell.appendChild(label);
+                        }
+                    }
+                    
+                    row.appendChild(labelCell);
+
+                    table.appendChild(row);
+                }
                 
                 async function addSearchTerm() {
                     var table = document.querySelector("#searchTable tbody");
+                    table.innerHTML = "<th>Input Term</th><th>Type of Input</th><th>Remove Term</th>";
 
                     var row = document.createElement("tr");
                     var inputCell = document.createElement("td");

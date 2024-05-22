@@ -34,7 +34,7 @@ body {
 }
 
 ul, table, th, tr {
-    border: 1px #0E0A33;
+    border: 3px solid black;
     text-align: center;
     color: #B1AFCA;
     font-size: 30px;
