@@ -99,15 +99,37 @@
                     var reqRows = document.querySelectorAll("#requiredReturnTable tbody tr"); // Get all rows in the table body
 
                     reqRows.forEach(row => {
-                        var slider = row.querySelector(".searchInput");
-                        var typeSelect = row.querySelector(".searchType");
-                        
-                        var result = {
-                            rating: slider.value, // Get the value of the slider
-                            type: typeSelect.value // Get the selected option from the dropdown
-                        };
+                        var songLabel = row.querySelector(".songIDs");
+                        var artistLabel = row.querySelector(".artistIDs");
+                        var genreLabel = row.querySelector(".genreNames");
 
-                        reqResults.push(result);
+                        // var typeSelect = row.querySelector(".artistIDs");
+                        
+                        if(artistLabel) {
+                            var result = {
+                                rating: artistLabel.innerHTML, // Get the value of the slider
+                                type: "seed_artists" // Get the selected option from the dropdown
+                            };
+                            
+                            reqResults.push(result);
+                        }
+                        if(songLabel) {
+                            var result = {
+                                rating: songLabel.innerHTML, // Get the value of the slider
+                                type: "seed_tracks" // Get the selected option from the dropdown
+                            };
+                            
+                            reqResults.push(result);
+                        }
+                        if(genreLabel) {
+                            var result = {
+                                rating: genreLabel.innerHTML, // Get the value of the slider
+                                type: "seed_genres" // Get the selected option from the dropdown
+                            };
+                            
+                            reqResults.push(result);
+                        }
+
                     });
 
                     var otherData = [];
@@ -117,12 +139,14 @@
                         var slider = row.querySelector(".searchInput");
                         var typeSelect = row.querySelector(".searchType");
                         
-                        var result = {
-                            rating: slider.value, // Get the value of the slider
-                            type: typeSelect.value // Get the selected option from the dropdown
-                        };
-
-                        otherData.push(result);
+                        if(slider) {
+                            var result = {
+                                rating: slider.value, // Get the value of the slider
+                                type: typeSelect.value // Get the selected option from the dropdown
+                            };
+                            
+                            otherData.push(result);
+                        }
                     });
 
                     console.log(reqResults);
@@ -262,7 +286,24 @@
                             labelCell.appendChild(label);
                         }
                     }
-                    
+                    else if(value === 'seed_artists') {
+                        var artistName = document.getElementById('searchInput').value;
+
+                        var dict = {'artistName': artistName};
+                        id = await getID(dict, 'artist');
+
+                        var labelCheck = table.getElementsByClassName("artistIDs");
+                        if (labelCheck.length == 1) {
+                            labelCheck[0].innerText = labelCheck[0].innerText + "," + id;
+                            return;
+                        }
+                        else {
+                            var label = document.createElement("label");
+                            label.className = "artistIDs";
+                            label.innerText = id;
+                            labelCell.appendChild(label);
+                        }
+                    }
                     row.appendChild(labelCell);
 
                     table.appendChild(row);
@@ -361,51 +402,6 @@
 
                         table.appendChild(row);
                     }
-                }
-
-
-
-                function createResultData() {
-                    var resultData = {};
-                    for(var i = 0; i <= 1; i += 0.05) {
-                        i = Math.round(i * 100) / 100;
-                        resultData[i] = {
-                            counts: [],
-                            trackNames: [],
-                            artistNames: [],
-                            imageurls: []
-                        };
-                    }
-
-                    return resultData;
-                }
-
-                function addCounts(data, typeToSearch, resultData) {
-                    var graphValues = getGraphValues(data, typeToSearch);
-                    // console.log(graphValues);
-
-                    var multiples = [];
-                    var counts = [];
-                    var names = {};
-
-                    Object.keys(graphValues).sort((a, b) => parseFloat(a) - parseFloat(b)).forEach(key => {
-                        multiples.push(parseFloat(key)); // Ensure the key is converted back to float for graphing
-                        counts.push(graphValues[key].count);
-                        names[parseFloat(key)] = [graphValues[key].trackNames, graphValues[key].artistNames, graphValues[key].imageurls];
-                    });
-
-                    // console.log(names);
-                    // console.log(resultData);
-
-                    for(var i = 0; i < multiples.length; i++) {
-                        // console.log(multiples[i]);
-                        resultData[multiples[i]].counts.push(counts[i]);
-                        resultData[multiples[i]].trackNames.push(names[multiples[i]][0]);
-                        resultData[multiples[i]].artistNames.push(names[multiples[i]][1]);
-                        resultData[multiples[i]].imageurls.push(names[multiples[i]][2]);
-                    }
-
-                    return resultData;
                 }
             </script>
     </body>
