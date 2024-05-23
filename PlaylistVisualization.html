@@ -24,6 +24,11 @@
                 <label>Please Input Spotify id: </label>
                 <input id="idInput">
 
+                <select id="playlistChoice">
+                    <option value="user">User</option>
+                    <option value="playlist">Playlist</option>
+                </select>
+
                 <br>
                 <label>Select what type of result you want and search!</label>
                 <br>
@@ -65,7 +70,7 @@
                 
                 
                 <script type="module">
-                    import { getPlaylist } from './JS/PlaylistCalls.js';
+                    import { getPlaylist, getUserPlaylists } from './JS/PlaylistCalls.js';
                     import { getSongDetails } from './JS/SongCalls.js';
                     import { getGraphValues, getPieChartKeys, getPieChartModes } from './JS/ParseCalls.js';
 
@@ -85,17 +90,35 @@
                     
                     async function searchPlaylist(selectedOptions) {
                         var id = document.getElementById("idInput").value;
-                        var data = await getPlaylist(id);
-                        
-                        var resultData = createResultData();
-                        for(var option of selectedOptions) {
-                            resultData = addCounts(data, option, resultData);
+                        var choice = document.getElementById("playlistChoice").value;
+                        if(choice === 'playlist') {
+                            var data = await getPlaylist(id);
+                            
+                            var resultData = createResultData();
+                            for(var option of selectedOptions) {
+                                resultData = addCounts(data, option, resultData);
+                            }
+                            
+                            
+                            createChart(resultData, selectedOptions);
+                            createBarChart(getPieChartKeys(data), 'keyPieChart');
+                            createPieChart(getPieChartModes(data), 'modePieChart');
                         }
+                        else {
+                            var data = await getUserPlaylists(id);
+                            var resultData = createResultData();
 
-                        
-                        createChart(resultData, selectedOptions);
-                        createBarChart(getPieChartKeys(data), 'keyPieChart');
-                        createPieChart(getPieChartModes(data), 'modePieChart');
+                            for(var id1 of data) {
+                                var data1 = await getPlaylist(id1);
+                                console.log(data1);
+
+                                for(var option of selectedOptions) {
+                                    resultData = addCounts(data1, option, resultData);
+                                }
+                            }
+
+                            createChart(resultData, selectedOptions);
+                        }
                     }
 
                     function createResultData() {

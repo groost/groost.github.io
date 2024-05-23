@@ -56,3 +56,23 @@ export async function getPlaylist(id) {
     }
     return retData;
 }
+
+export async function getUserPlaylists(userID) {
+    var url = "https://api.spotify.com/v1/users/" + userID + "/playlists";
+
+    const userResponse = await fetch(url, {
+        method: "GET",
+        headers: {
+            'Authorization': "Bearer " + access_token
+        }
+    });
+
+    var userData = await userResponse.json();
+
+    var ids = [];
+    for(var a of userData['items']) {
+        ids.push(a['id']);
+    }
+
+    return ids;
+}
