@@ -73,6 +73,8 @@
                     import { getPlaylist, getUserPlaylists } from './JS/PlaylistCalls.js';
                     import { getSongDetails } from './JS/SongCalls.js';
                     import { getGraphValues, getPieChartKeys, getPieChartModes } from './JS/ParseCalls.js';
+                    import { createResultData, addCounts, getRandomColor } from './JS/CountCalls.js';
+                    import { createBarChart, createPieChart, populateTable } from './JS/TableCalls.js';
 
                     document.querySelector("#playlistButton").addEventListener('click', () => {
                         const selectedOptions = [];
@@ -119,56 +121,6 @@
 
                             createChart(resultData, selectedOptions);
                         }
-                    }
-
-                    function createResultData() {
-                        var resultData = {};
-                        for(var i = 0; i <= 1; i += 0.05) {
-                            i = Math.round(i * 100) / 100;
-                            resultData[i] = {
-                                counts: [],
-                                trackNames: [],
-                                artistNames: [],
-                                imageurls: []
-                            };
-                        }
-
-                        return resultData;
-                    }
-
-                    function addCounts(data, typeToSearch, resultData) {
-                        var graphValues = getGraphValues(data, typeToSearch);
-                        // console.log(graphValues);
-
-                        var multiples = [];
-                        var counts = [];
-                        var names = {};
-
-                        Object.keys(graphValues).sort((a, b) => parseFloat(a) - parseFloat(b)).forEach(key => {
-                            multiples.push(parseFloat(key)); // Ensure the key is converted back to float for graphing
-                            counts.push(graphValues[key].count);
-                            names[parseFloat(key)] = [graphValues[key].trackNames, graphValues[key].artistNames, graphValues[key].imageurls];
-                        });
-
-                        console.log(names);
-                        // console.log(resultData);
-
-                        for(var i = 0; i < multiples.length; i++) {
-                            // console.log(multiples[i]);
-                            resultData[multiples[i]].counts.push(counts[i]);
-                            resultData[multiples[i]].trackNames.push(names[multiples[i]][0]);
-                            resultData[multiples[i]].artistNames.push(names[multiples[i]][1]);
-                            resultData[multiples[i]].imageurls.push(names[multiples[i]][2]);
-                        }
-
-                        return resultData;
-                    }
-
-                    function getRandomColor() {
-                        const r = Math.floor(Math.random() * 255);
-                        const g = Math.floor(Math.random() * 255);
-                        const b = Math.floor(Math.random() * 255);
-                        return `rgb(${r}, ${g}, ${b})`;
                     }
 
                     function createChart(resultData, typesToSearch) {
@@ -227,113 +179,6 @@
                             
                         };
       
-                    }
-
-                    function createBarChart(data, chartName) {
-                        const container = document.querySelector('.container');
-                        let canvas = document.getElementById(chartName);
-                        if (!canvas) {
-                            canvas = document.createElement('canvas');
-                            canvas.id = chartName;
-                            canvas.style = "width:50%;max-width:350px";
-                            container.appendChild(canvas);
-                        }
-                        
-                        // Destroy existing chart instance if it exists
-
-                        // Initialize the chart on the new canvas
-                        const ctx = canvas.getContext('2d');
-                        const colors = data.labels.map(() => getRandomColor()); // Generating a random color for each segment
-                        keyBarChart = new Chart(ctx, {
-                            type: "bar",
-                            data: {
-                                labels: data.labels,
-                                datasets: [{
-                                    backgroundColor: colors,
-                                    borderColor: 'white',
-                                    data: data.data
-                                }]
-                            },
-                            options: {}
-                        });
-
-                        canvas.onclick = (evt) => {
-                            const points = keyBarChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
-
-                            if(points[0]) {
-                                var index = points[0]._index;
-                                populateTable(data.trackNames[data.labels[index]], data.artistNames[data.labels[index]], data.imageurls[data.labels[index]]);
-                            }
-                        };
-                    }
-
-                    function createPieChart(data, chartName) {
-                        const container = document.querySelector('.container');
-                        let canvas = document.getElementById(chartName);
-                        if (!canvas) {
-                            canvas = document.createElement('canvas');
-                            canvas.id = chartName;
-                            canvas.style = "width:50%;max-width:350px";
-                            container.appendChild(canvas);
-                        }
-                        
-                        // Destroy existing chart instance if it exists
-
-                        // Initialize the chart on the new canvas
-                        const ctx = canvas.getContext('2d');
-                        const colors = data.labels.map(() => getRandomColor()); // Generating a random color for each segment
-                        modePieChart = new Chart(ctx, {
-                            type: "pie",
-                            data: {
-                                labels: data.labels,
-                                datasets: [{
-                                    backgroundColor: colors,
-                                    borderColor: 'white',
-                                    data: data.data
-                                }]
-                            },
-                            options: {}
-                        });
-
-                        canvas.onclick = (evt) => {
-                            const points = modePieChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
-
-                            if(points[0]) {
-                                var index = points[0]._index;
-                                // if(chartName === 'keyPieChart') {
-                                populateTable(data.trackNames[data.labels[index]], data.artistNames[data.labels[index]], data.imageurls[data.labels[index]]);
-                                // }
-                            }
-                        };
-                    }
-
-
-                    function populateTable(songNames, artistNames, imageurls) {
-                        var table = document.querySelector("#songTable tbody");
-                        table.innerHTML = "<tr><th>Song Name</th><th>Artist Name</th><th>Album Art/Spotify Link</th></tr>";
-
-                        for(var i = 0; i < songNames.length; i++) {
-                            var row = document.createElement("tr");
-
-                            var songBox = document.createElement("td");
-                            var artistName = document.createElement("td");
-                            var imageBox = document.createElement("td");
-
-                            songBox.innerHTML = songNames[i];
-                            artistName.innerHTML = artistNames[i];
-
-                            var image = document.createElement('img');
-                            image.src = imageurls[i];
-                            imageBox.appendChild(image);
-
-                            row.appendChild(songBox);
-                            row.appendChild(artistName);
-                            row.appendChild(imageBox);
-
-                            // name.innerHTML = graphValues[label].names[i];
-
-                            table.appendChild(row);
-                        }
                     }
                 </script>
             </div>

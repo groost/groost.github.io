@@ -101,7 +101,7 @@
                     reqRows.forEach(row => {
                         var songLabel = row.querySelector(".songIDs");
                         var artistLabel = row.querySelector(".artistIDs");
-                        var genreLabel = row.querySelector(".genreNames");
+                        var genreLabel = row.querySelector(".genres");
 
                         // var typeSelect = row.querySelector(".artistIDs");
                         
@@ -304,6 +304,22 @@
                             labelCell.appendChild(label);
                         }
                     }
+                    else {
+                        var genres = document.getElementById('searchInput').value;
+
+                        var labelCheck = table.getElementsByClassName("genres");
+                        if (labelCheck.length == 1) {
+                            labelCheck[0].innerText = labelCheck[0].innerText + "," + genres;
+                            return;
+                        }
+                        else {
+                            var label = document.createElement("label");
+                            label.className = "genres";
+                            label.innerText = genres;
+                            labelCell.appendChild(label);
+                        }
+                    }
+
                     row.appendChild(labelCell);
 
                     table.appendChild(row);
@@ -376,6 +392,7 @@
 
                 async function populateTable(reqData, otherData) {
                     var data = await searchRecommendations(reqData, otherData);
+                    console.log(data);
                     var table = document.querySelector("#songTable tbody");
                     table.innerHTML = "<tr><th>Song Name</th><th>Artist Name</th><th>Album Art/Spotify Link</th></tr>";
 

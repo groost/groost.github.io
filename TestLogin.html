@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Music Recommendation Website</title>
+        <meta charset="utf-8">
+
+        <link rel="stylesheet" href="style.css">
+    </head>
+    
+    <body>
+        <nav class="main-navigation">
+            <ul class="menu">            
+                <li class="menu-item"><a href="index.html">Home</a></li>
+                <li class="menu-item"><a href="DataVisualization.html">Search Data</a></li>
+                <li class="menu-item"><a href="PlaylistVisualization.html">Search Playlists</a></li>
+                <li class="menu-item"><a href="Search.html">Search for Songs</a></li>
+                <li class="menu-item"><a href="GetIDs.html">Get IDs</a></li>
+                <li class="menu-item"><a class="active" href="TestLogin.html">Get IDs</a></li>
+            </ul>
+
+        </nav>
+        
+        <button type="submit" id="loginButton">login</button>
+        
+        <h1>Spotify Playlist Manager</h1>
+        <form id="inputForm">
+            <label for="userId">User ID:</label>
+            <input type="text" id="userId" name="userId" required>
+            <label for="playlistName">Playlist Name:</label>
+            <input type="text" id="playlistName" name="playlistName" required>
+            <button type="submit">Create Playlist</button>
+        </form>
+    
+        <form id="addTracksForm">
+            <label for="playlistId">Playlist ID:</label>
+            <input type="text" id="playlistId" name="playlistId" required>
+            <label for="trackUris">Track URIs (comma separated):</label>
+            <input type="text" id="trackUris" name="trackUris" required>
+            <button type="submit">Add Tracks</button>
+        </form>
+
+        <script type="module">
+            import { getAccessToken } from './JS/MainCalls.js';
+
+            document.querySelector("#loginButton").addEventListener('click', () => {
+                login();
+            });
+
+            document.getElementById('inputForm').addEventListener('submit', async (event) => {
+                event.preventDefault();
+                
+                const userId = document.getElementById('userId').value;
+                const playlistName = document.getElementById('playlistName').value;
+                
+                const response = await fetch('http://localhost:3000/create-playlist', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ userId, playlistName }),
+                });
+
+                const data = await response.json();
+                console.log(data);
+            });
+
+            document.getElementById('addTracksForm').addEventListener('submit', async (event) => {
+                event.preventDefault();
+                
+                const playlistId = document.getElementById('playlistId').value;
+                const trackUris = document.getElementById('trackUris').value.split(',');
+
+                const response = await fetch('http://localhost:3000/add-tracks', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ playlistId, trackUris }),
+                });
+
+                const data = await response.json();
+                console.log(data);
+            });
+            
+            function openPopup(url) {
+                const popup = window.open(url, '_blank', 'width=600,height=400');
+
+                // Message event listener to handle communication from popup window
+                window.addEventListener('message', function(event) {
+                    // Check if message is from the popup window
+                    if (event.source === popup) {
+                        // Handle message data as needed
+                        console.log('Message received from popup:', event.data);
+                        // Close the popup window
+                        popup.close();
+                        // Perform further actions after handling the message
+                    }
+                });
+            }
+
+
+            async function login() {
+                try {
+                    // Perform a GET request to the login endpoint
+                    fetch('http://localhost:3000/login')
+                        .then(response => {
+                            // Check if the response is a redirect
+                            if (response.redirected) {
+                                // Manually navigate to the redirected URL
+                                openPopup(response.url);
+                            } else {
+                                // Handle other types of responses
+                                console.log('Response:', response);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error during login:', error);
+                        });
+
+                    // Handle response as needed
+                    console.log(response);
+                } catch (error) {
+                    console.error('Error during login:', error);
+                }
+            }
+
+
+        </script>
+    </body>
+</html>

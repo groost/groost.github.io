@@ -69,6 +69,7 @@ export async function parseSongs(albumData) {
     for(var i = 0; i < albumData.length; i++) {
         for(var j = 0; j < albumData[i]['trackData'].length; j++) {
             var diction = {
+                'trackID': albumData[i]['trackData'][j]['id'],
                 'trackName': albumData[i]['trackData'][j]['trackName'], 
                 'artistName': albumData[i]['artistName'], 
                 'albumName': albumData[i]['albumName'], 
@@ -100,11 +101,13 @@ export function getGraphValues(data, typeToSearch) {
     var names = [];
     var artistNames = [];
     var imageURLs = [];
+    var ids = [];
     for(var i = 0; i < data.length; i++) {
         xVals.push(data[i][typeToSearch]);
         names.push(data[i]['trackName']);
         artistNames.push(data[i]['artistName'])
         imageURLs.push(data[i]['imageurl']);
+        ids.push(data[i]['trackID']);
     }
     
     // console.log(imageURLs);
@@ -115,13 +118,14 @@ export function getGraphValues(data, typeToSearch) {
         var roundedKey = rounded.toFixed(2); // Convert to string for a consistent key format
         
         if (!countsAndNames[roundedKey]) {
-            countsAndNames[roundedKey] = { count: 0, trackNames: [], artistNames: [], imageurls: []};
+            countsAndNames[roundedKey] = { count: 0, trackNames: [], artistNames: [], imageurls: [], trackIDs: []};
         }
         
         countsAndNames[roundedKey].count++;
         countsAndNames[roundedKey].trackNames.push(names[i]);
         countsAndNames[roundedKey].artistNames.push(artistNames[i]);
         countsAndNames[roundedKey].imageurls.push(imageURLs[i]);
+        countsAndNames[roundedKey].trackIDs.push(ids[i]);
     }
 
     return countsAndNames;

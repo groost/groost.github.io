@@ -51,23 +51,24 @@ export async function searchGeneral(data, types) {
 
 export async function searchRecommendations(reqData, otherData) {
     var url = "https://api.spotify.com/v1/recommendations?" + encodeURIComponent(reqData[0]['type']) + "=" + encodeURIComponent(reqData[0]['rating']);
-    for(var i = 0; i < reqData.length; i++) {
+    for(var i = 1; i < reqData.length; i++) {
         url += "&" + encodeURIComponent(reqData[i]['type']) + "=" + encodeURIComponent(reqData[i]['rating']);
         // if(data[i]['type'] === 'songID') {
         //     url +=
         // }
     }
-
+    
     for(var i = 0; i < otherData.length; i++) {
         url += "&" + encodeURIComponent("target_" + otherData[i]['type']) + "=" + encodeURIComponent(otherData[i]['rating']);
     }
     
+    console.log(url);
     const response = await fetch(url, {
         headers: {
             'Authorization': "Bearer " + access_token
         }
     });
-
+    
     return await response.json();
 }
 
