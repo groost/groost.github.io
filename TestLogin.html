@@ -102,27 +102,24 @@
             async function login() {
                 try {
                     // Perform a GET request to the login endpoint
-                    fetch('https://groost.github.io:3000/login')
-                        .then(response => {
-                            // Check if the response is a redirect
-                            if (response.redirected) {
-                                // Manually navigate to the redirected URL
-                                openPopup(response.url);
-                            } else {
-                                // Handle other types of responses
-                                console.log('Response:', response);
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error during login:', error);
-                        });
+                    const response = await fetch('https://groost.github.io:3000/login', {
+                        method: 'GET',
+                        redirect: 'manual' // To handle redirects manually
+                    });
 
-                    // Handle response as needed
-                    console.log(response);
+                    // Check if the response is a redirect
+                    if (response.redirected) {
+                        // Manually navigate to the redirected URL
+                        window.location.href = response.url;
+                    } else {
+                        // Handle other types of responses
+                        console.log('Response:', response);
+                    }
                 } catch (error) {
                     console.error('Error during login:', error);
                 }
             }
+
 
 
         </script>
